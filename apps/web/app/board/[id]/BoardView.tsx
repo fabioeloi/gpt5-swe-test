@@ -3,8 +3,11 @@ import React from 'react';
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
   MouseSensor,
   TouchSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -13,6 +16,7 @@ import {
   arrayMove,
   rectSortingStrategy,
   useSortable,
+  sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useRouter } from 'next/navigation';
@@ -49,7 +53,8 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor),
+  useSensor(TouchSensor),
+  useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
@@ -57,6 +62,8 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
   const [suggestingFor, setSuggestingFor] = React.useState<string | null>(null);
   const [listSummaries, setListSummaries] = React.useState<Record<string, string>>({});
   const [summarizingFor, setSummarizingFor] = React.useState<string | null>(null);
+  const [activeId, setActiveId] = React.useState<string | null>(null);
+  const [activeType, setActiveType] = React.useState<'list' | 'card' | null>(null);
 
   async function addList(formData: FormData) {
     const title = String(formData.get('title') || '').trim();
@@ -135,11 +142,30 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
     }
   }
 
+  function handleDragStart(event: DragStartEvent) {
+    const id = String(event.active.id);
+    setActiveId(id);
+    const listIds = lists.map((l) => l.id);
+    if (listIds.includes(id)) {
+      setActiveType('list');
+      return;
+    }
+    for (const cards of Object.values(cardsByList)) {
+      if (cards.find((c) => c.id === id)) {
+        setActiveType('card');
+        return;
+      }
+    }
+    setActiveType(null);
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const aid = String(active.id);
     const oid = String(over.id);
+    setActiveId(null);
+    setActiveType(null);
 
     // Dragging a list (column)
     const listIds = lists.map((l) => l.id);
@@ -210,7 +236,7 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
 
   return (
     <div className="space-y-3">
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+  <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <SortableContext items={lists.map((l) => l.id)} strategy={rectSortingStrategy}>
           <div className="board-grid">
             {lists.map((l) => (
@@ -293,6 +319,41 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
             </div>
           </div>
         </SortableContext>
+        <DragOverlay>
+          {activeId && activeType === 'list' ? (
+            (() => {
+              const l = lists.find((x) => x.id === activeId);
+              if (!l) return null;
+              return (
+                <div className="board-column">
+                  <div className="flex items-center justify-between gap-2">
+                    <strong className="text-sm">{l.title}</strong>
+                  </div>
+                </div>
+              );
+            })()
+          ) : activeId && activeType === 'card' ? (
+            (() => {
+              let card: Card | null = null;
+              for (const cards of Object.values(cardsByList)) {
+                const found = cards.find((c) => c.id === activeId);
+                if (found) {
+                  card = found;
+                  break;
+                }
+              }
+              if (!card) return null;
+              return (
+                <div className="board-card">
+                  <div className="text-sm font-medium">{card.title}</div>
+                  {card.description ? (
+                    <div className="text-xs text-slate-600 mt-1 line-clamp-3">{card.description}</div>
+                  ) : null}
+                </div>
+              );
+            })()
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </div>
   );
