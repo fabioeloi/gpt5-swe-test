@@ -11,6 +11,11 @@ dist/
 build/
 coverage/
 
+# Next.js & TypeScript build outputs
+**/.next/
+**/out/
+**/*.tsbuildinfo
+
 # IDE
 .vscode/
 .idea/
