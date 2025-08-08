@@ -41,32 +41,22 @@ export default async function BoardsPage() {
       {boards.length === 0 ? (
         <div className="text-slate-500">No boards yet. Create one above.</div>
       ) : (
-        boards.map((b: any) => (
-          <section key={b.id} className="space-y-3">
-            <h2 className="text-lg font-medium">
-              <a href={`/board/${b.id}`} className="hover:underline">{b.title}</a>
-            </h2>
-            <div className="board-grid">
-              {b.lists?.map((l: any) => (
-                <div key={l.id} className="board-column">
-                  <div className="flex items-center justify-between">
-                    <strong className="text-sm">{l.title}</strong>
-                    <button className="text-xs text-brand-700 hover:underline">+ Card</button>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {l.cards?.map((c: any) => (
-                      <div key={c.id} className="board-card">
-                        <div className="text-sm font-medium">{c.title}</div>
-                        {c.description ? <div className="text-xs text-slate-600 mt-1 line-clamp-3">{c.description}</div> : null}
-                      </div>
-                    ))}
-                  </div>
-                  <button className="text-xs text-slate-500 hover:text-slate-700 self-start">Add another card</button>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
+          {boards.map((b: any) => {
+            const listCount = b.lists?.length || 0;
+            const cardCount = (b.lists || []).reduce((acc: number, l: any) => acc + (l.cards?.length || 0), 0);
+            return (
+        <a key={b.id} href={`/board/${b.id}`} className="rounded-lg bg-white shadow-sm border border-slate-100 p-4 hover:shadow-md transition">
+                <div className="text-sm text-slate-500">Board</div>
+                <div className="mt-1 font-medium">{b.title}</div>
+                <div className="mt-3 flex items-center gap-3 text-xs text-slate-600">
+          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-brand-500" /> {listCount} lists</span>
+          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> {cardCount} cards</span>
                 </div>
-              ))}
-            </div>
-          </section>
-        ))
+              </a>
+            );
+          })}
+        </div>
       )}
     </div>
   );

@@ -72,3 +72,9 @@ npm run prisma:seed
 Try the Boards page:
 
 - Web: <http://localhost:3000/boards>
+
+AI-powered suggestions in UI:
+
+- On the board detail page, each list has a Suggest button next to the card composer.
+- It calls the server-side AI proxy at `/ai/chat` to generate a short, action-oriented card title.
+- Configure `AI_BASE_URL`, `AI_MODEL`, and `AI_API_KEY` in the API environment for this to work. If not configured, the Suggest action will no-op.

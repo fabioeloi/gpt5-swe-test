@@ -53,6 +53,8 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
   );
 
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+  const inputRefs = React.useRef<Record<string, HTMLInputElement | null>>({});
+  const [suggestingFor, setSuggestingFor] = React.useState<string | null>(null);
 
   async function addList(formData: FormData) {
     const title = String(formData.get('title') || '').trim();
@@ -74,6 +76,34 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
       body: JSON.stringify({ listId, title }),
     });
     router.refresh();
+  }
+
+  async function suggestTitle(listId: string, context?: { listTitle?: string }) {
+    const input = inputRefs.current[listId];
+    if (!input) return;
+    setSuggestingFor(listId);
+    try {
+      const prompt = `Suggest a concise, action-oriented card title for a task in the list "${context?.listTitle || ''}". Output only the title.`;
+      const res = await fetch(`${base}/ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: 'You are a helpful assistant that writes short, crisp task titles.' },
+            { role: 'user', content: prompt },
+          ],
+          max_tokens: 24,
+          temperature: 0.7,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const suggestion = data?.choices?.[0]?.content?.trim();
+        if (suggestion) input.value = suggestion;
+      }
+    } finally {
+      setSuggestingFor(null);
+    }
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -183,7 +213,22 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
                     }}
                     className="mt-2 flex gap-2"
                   >
-                    <input name="title" placeholder="Add a card" className="rounded border px-2 py-1 text-xs" />
+                    <input
+                      name="title"
+                      placeholder="Add a card"
+                      className="rounded border px-2 py-1 text-xs flex-1"
+                      ref={(el) => {
+                        inputRefs.current[l.id] = el;
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => suggestTitle(l.id, { listTitle: l.title })}
+                      disabled={suggestingFor === l.id}
+                      className="text-xs rounded border px-2 py-1 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      {suggestingFor === l.id ? 'Suggesting…' : 'Suggest'}
+                    </button>
                     <button type="submit" className="text-xs rounded bg-slate-900 text-white px-2 py-1">Add</button>
                   </form>
                 </div>
