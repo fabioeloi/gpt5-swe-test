@@ -11,7 +11,8 @@
   "lint": "eslint \"{src,tests}/**/*.ts\" --max-warnings=0",
   "typecheck": "tsc -p tsconfig.json --noEmit",
   "prisma:generate": "prisma generate",
-  "prisma:migrate": "prisma migrate dev --name init"
+  "prisma:migrate": "prisma migrate dev --name init",
+  "prisma:seed": "ts-node --compiler-options '{\"module\":\"commonjs\"}' prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

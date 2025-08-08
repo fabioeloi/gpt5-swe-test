@@ -7,7 +7,13 @@ export class BoardsService {
 
   listBoards() {
     return this.prisma.board.findMany({
-      include: { lists: { include: { cards: true } } },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        lists: {
+          orderBy: { position: 'asc' },
+          include: { cards: { orderBy: { position: 'asc' } } },
+        },
+      },
     });
   }
 }

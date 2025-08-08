@@ -39,3 +39,36 @@ Services:
 Environment:
 
 - Copy `.env.example` to `.env` and update values as needed.
+
+AI settings (server-side only):
+
+- AI_BASE_URL (default: <https://api.openai.com/v1>)
+- AI_MODEL (default: gpt-4o-mini)
+- AI_API_KEY (your key; never expose in the browser)
+
+Test AI chat endpoint (example request):
+
+```bash
+curl -s http://localhost:4000/ai/chat \
+	-H 'Content-Type: application/json' \
+	-d '{
+		"messages": [
+			{ "role": "system", "content": "You are a helpful assistant." },
+			{ "role": "user", "content": "Say hello in one short sentence." }
+		]
+	}' | jq
+```
+
+Seed demo data:
+
+```bash
+# Run after DB is up and migrations applied
+cd apps/api
+export DATABASE_URL=${DATABASE_URL:-"postgresql://postgres:postgres@localhost:5432/gpt5"}
+npx prisma migrate dev --schema ../../prisma/schema.prisma --name init --skip-seed
+npm run prisma:seed
+```
+
+Try the Boards page:
+
+- Web: <http://localhost:3000/boards>

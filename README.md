@@ -10,16 +10,25 @@ This repository hosts a POC for a Trello-like app with native generative AI inte
 - Prereqs: Node 20+, Docker Desktop
 - Copy `.env.example` to `.env` and adjust values
 - Local dev (split terminals):
-	- API: `cd apps/api && npm install && npm run start:dev`
-	- Web: `cd ../web && npm install && npm run dev`
+  - API: `cd apps/api && npm install && npm run start:dev`
+  - Web: `cd ../web && npm install && npm run dev`
 - Or use Docker Compose: `docker compose up --build`
 
 Services:
 
 - Web: <http://localhost:3000>
-- API: <http://localhost:4000/health>
+- API: <http://localhost:4000/health>, AI chat: POST <http://localhost:4000/ai/chat>
 
 See `docs/DEVELOPMENT.md` for details.
+
+Seed and Boards page:
+
+- Seed demo data: see `docs/DEVELOPMENT.md` (Prisma seed)
+- Boards UI: <http://localhost:3000/boards>
+
+AI endpoint:
+
+- Configure AI vars in `.env`, then POST to `/ai/chat` (server proxies to your OpenAI-compatible endpoint). See `docs/DEVELOPMENT.md`.
 
 ## docs
 
