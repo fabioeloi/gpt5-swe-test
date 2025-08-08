@@ -55,6 +55,8 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
   const inputRefs = React.useRef<Record<string, HTMLInputElement | null>>({});
   const [suggestingFor, setSuggestingFor] = React.useState<string | null>(null);
+  const [listSummaries, setListSummaries] = React.useState<Record<string, string>>({});
+  const [summarizingFor, setSummarizingFor] = React.useState<string | null>(null);
 
   async function addList(formData: FormData) {
     const title = String(formData.get('title') || '').trim();
@@ -103,6 +105,33 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
       }
     } finally {
       setSuggestingFor(null);
+    }
+  }
+
+  async function summarizeList(listId: string, listTitle: string) {
+    setSummarizingFor(listId);
+    try {
+      const titles = (cardsByList[listId] || []).map((c) => `- ${c.title}`).slice(0, 20).join('\n');
+      const prompt = `Summarize the Kanban list "${listTitle}" in one short, helpful sentence based on these card titles (if any):\n${titles || '(no cards)'}\nReturn only the sentence.`;
+      const res = await fetch(`${base}/ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: 'You write concise summaries for Kanban lists.' },
+            { role: 'user', content: prompt },
+          ],
+          max_tokens: 48,
+          temperature: 0.3,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const summary = data?.choices?.[0]?.content?.trim();
+        if (summary) setListSummaries((s) => ({ ...s, [listId]: summary }));
+      }
+    } finally {
+      setSummarizingFor(null);
     }
   }
 
@@ -187,9 +216,23 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
             {lists.map((l) => (
               <SortableItem id={l.id} key={l.id}>
                 <div className="board-column">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <strong className="text-sm">{l.title}</strong>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => summarizeList(l.id, l.title)}
+                        disabled={summarizingFor === l.id}
+                        className="text-[11px] rounded border px-2 py-0.5 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                        title="Summarize this list"
+                      >
+                        {summarizingFor === l.id ? 'Summarizing…' : 'Summarize'}
+                      </button>
+                    </div>
                   </div>
+                  {listSummaries[l.id] ? (
+                    <p className="mt-1 text-xs text-slate-600 italic">{listSummaries[l.id]}</p>
+                  ) : null}
                   <SortableContext items={(cardsByList[l.id] || []).map((c) => c.id)} strategy={rectSortingStrategy}>
                     <div className="flex flex-col gap-2">
                       {(cardsByList[l.id] || []).map((c) => (
