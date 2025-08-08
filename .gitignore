@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Env files
+.env
+.env.*
+
+# Node/JS (future setup)
+node_modules/
+dist/
+build/
+coverage/
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,62 @@
+// Prisma data model aligned with PRD (simplified for POC)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  boards    Board[]
+  comments  Comment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Board {
+  id        String   @id @default(cuid())
+  title     String
+  owner     User     @relation(fields: [ownerId], references: [id])
+  ownerId   String
+  lists     List[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model List {
+  id        String   @id @default(cuid())
+  title     String
+  board     Board    @relation(fields: [boardId], references: [id])
+  boardId   String
+  position  Int
+  cards     Card[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Card {
+  id        String   @id @default(cuid())
+  title     String
+  description String?
+  list      List     @relation(fields: [listId], references: [id])
+  listId    String
+  position  Int
+  comments  Comment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String
+  card      Card     @relation(fields: [cardId], references: [id])
+  cardId    String
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  String?
+  createdAt DateTime @default(now())
+}
