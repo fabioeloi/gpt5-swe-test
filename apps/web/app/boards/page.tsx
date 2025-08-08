@@ -1,16 +1,7 @@
 import { revalidatePath } from 'next/cache';
+import { fetchBoards } from '../../lib/api';
 
-async function fetchBoards() {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
-  try {
-  const res = await fetch(`${base}/boards`, { next: { revalidate: 0 } });
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (e) {
-    console.error('Failed to fetch boards', e);
-    return [] as any[];
-  }
-}
+// fetchBoards now lives in lib/api for testability
 
 export default async function BoardsPage() {
   async function createBoard(formData: FormData) {
