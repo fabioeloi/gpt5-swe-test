@@ -16,4 +16,14 @@ export class BoardsService {
       },
     });
   }
+
+  async createBoard(title: string, ownerId?: string) {
+    let uid = ownerId;
+    if (!uid) {
+      const user = await this.prisma.user.findFirst();
+      if (!user) throw new Error('No users found to own the board');
+      uid = user.id;
+    }
+    return this.prisma.board.create({ data: { title, ownerId: uid } });
+  }
 }

@@ -6,10 +6,27 @@ async function fetchBoards() {
 }
 
 export default async function BoardsPage() {
+  async function createBoard(formData: FormData) {
+    'use server';
+    const title = String(formData.get('title') || '').trim();
+    if (!title) return;
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+    const res = await fetch(`${base}/boards`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title }),
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error('Failed to create board');
+  }
   const boards = await fetchBoards();
   return (
     <main style={{ padding: 24 }}>
       <h1>Boards</h1>
+      <form action={createBoard} style={{ display: 'flex', gap: 8, margin: '12px 0' }}>
+        <input name="title" placeholder="New board title" />
+        <button type="submit">Create</button>
+      </form>
       {boards.length === 0 ? (
         <p>No boards yet. Run seed.</p>
       ) : (
