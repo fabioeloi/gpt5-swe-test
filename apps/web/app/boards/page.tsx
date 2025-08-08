@@ -1,12 +1,18 @@
+import { revalidatePath } from 'next/cache';
+
 async function fetchBoards() {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+  try {
   const res = await fetch(`${base}/boards`, { next: { revalidate: 0 } });
-  if (!res.ok) return [];
-  return res.json();
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (e) {
+    console.error('Failed to fetch boards', e);
+    return [] as any[];
+  }
 }
 
 export default async function BoardsPage() {
-  const { revalidatePath } = await import('next/cache');
   async function createBoard(formData: FormData) {
     'use server';
     const title = String(formData.get('title') || '').trim();
@@ -25,7 +31,7 @@ export default async function BoardsPage() {
       }
     } catch (e) {
       console.error('Create board error', e);
-    }
+  }
   revalidatePath('/boards');
   }
   const boards = await fetchBoards();
