@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { BoardsService } from './boards.service';
 
 @Controller('boards')
@@ -15,5 +15,10 @@ export class BoardsController {
     if (!body?.title) return { error: 'title is required' };
     const board = await this.boards.createBoard(body.title, body.ownerId);
     return board;
+  }
+
+  @Get(':id')
+  get(@Param('id') id: string) {
+    return this.boards.getBoard(id);
   }
 }

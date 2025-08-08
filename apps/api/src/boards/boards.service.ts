@@ -17,6 +17,18 @@ export class BoardsService {
     });
   }
 
+  getBoard(id: string) {
+    return this.prisma.board.findUnique({
+      where: { id },
+      include: {
+        lists: {
+          orderBy: { position: 'asc' },
+          include: { cards: { orderBy: { position: 'asc' } } },
+        },
+      },
+    });
+  }
+
   async createBoard(title: string, ownerId?: string) {
     let uid = ownerId;
     if (!uid) {

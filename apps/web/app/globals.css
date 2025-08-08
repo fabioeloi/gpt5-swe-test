@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --card: 255 255 255;
+}
+
+.board-grid {
+  @apply grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4;
+}
+
+.board-column {
+  @apply bg-white shadow-card rounded-lg p-3 flex flex-col gap-3 min-h-[200px];
+}
+
+.board-card {
+  @apply bg-slate-50 hover:bg-slate-100 cursor-grab rounded-md px-3 py-2 shadow-sm border border-slate-100;
+}

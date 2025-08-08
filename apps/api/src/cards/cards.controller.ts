@@ -10,4 +10,13 @@ export class CardsController {
     if (!body?.listId || !body?.title) return { error: 'listId and title are required' };
     return this.cards.createCard(body.listId, body.title, body.description);
   }
+
+  @Post('reorder')
+  async reorder(
+    @Body()
+    body: { source: { listId: string; orderedIds: string[] }; dest?: { listId: string; orderedIds: string[] } },
+  ) {
+    if (!body?.source?.listId || !Array.isArray(body?.source?.orderedIds)) return { error: 'source.listId and source.orderedIds are required' };
+    return this.cards.reorder(body);
+  }
 }

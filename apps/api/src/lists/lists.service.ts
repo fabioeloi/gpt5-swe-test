@@ -13,4 +13,12 @@ export class ListsService {
     const nextPos = (max._max.position ?? 0) + 1;
     return this.prisma.list.create({ data: { boardId, title, position: nextPos } });
   }
+
+  async reorder(boardId: string, orderedIds: string[]) {
+    return this.prisma.$transaction(
+      orderedIds.map((id, index) =>
+        this.prisma.list.update({ where: { id }, data: { position: index + 1, boardId } }),
+      ),
+    );
+  }
 }
