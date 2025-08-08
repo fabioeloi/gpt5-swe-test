@@ -6,18 +6,27 @@ async function fetchBoards() {
 }
 
 export default async function BoardsPage() {
+  const { revalidatePath } = await import('next/cache');
   async function createBoard(formData: FormData) {
     'use server';
     const title = String(formData.get('title') || '').trim();
     if (!title) return;
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
-    const res = await fetch(`${base}/boards`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
-      cache: 'no-store',
-    });
-    if (!res.ok) throw new Error('Failed to create board');
+    try {
+      const res = await fetch(`${base}/boards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+        cache: 'no-store',
+      });
+      if (!res.ok) {
+        // swallow error for POC and continue to refresh
+        console.error('Create board failed', await res.text());
+      }
+    } catch (e) {
+      console.error('Create board error', e);
+    }
+  revalidatePath('/boards');
   }
   const boards = await fetchBoards();
   return (

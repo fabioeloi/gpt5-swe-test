@@ -20,9 +20,18 @@ export class BoardsService {
   async createBoard(title: string, ownerId?: string) {
     let uid = ownerId;
     if (!uid) {
-      const user = await this.prisma.user.findFirst();
-      if (!user) throw new Error('No users found to own the board');
-      uid = user.id;
+      const existing = await this.prisma.user.findFirst();
+      if (existing) {
+        uid = existing.id;
+      } else {
+        // Create a default demo user if none exists (POC convenience)
+        const demo = await this.prisma.user.upsert({
+          where: { email: 'demo@example.com' },
+          update: {},
+          create: { email: 'demo@example.com', name: 'Demo User' },
+        });
+        uid = demo.id;
+      }
     }
     return this.prisma.board.create({ data: { title, ownerId: uid } });
   }
