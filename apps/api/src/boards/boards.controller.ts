@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, BadRequestException } from '@nestjs/common';
 import { BoardsService } from './boards.service';
 
 @Controller('boards')
@@ -12,9 +12,8 @@ export class BoardsController {
 
   @Post()
   async create(@Body() body: { title: string; ownerId?: string }) {
-    if (!body?.title) return { error: 'title is required' };
-    const board = await this.boards.createBoard(body.title, body.ownerId);
-    return board;
+    if (!body?.title) throw new BadRequestException('title is required');
+    return this.boards.createBoard(body.title, body.ownerId);
   }
 
   @Get(':id')

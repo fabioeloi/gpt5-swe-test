@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, BadRequestException } from '@nestjs/common';
 import { CardsService } from './cards.service';
 
 @Controller('cards')
@@ -7,7 +7,7 @@ export class CardsController {
 
   @Post()
   async create(@Body() body: { listId: string; title: string; description?: string }) {
-    if (!body?.listId || !body?.title) return { error: 'listId and title are required' };
+    if (!body?.listId || !body?.title) throw new BadRequestException('listId and title are required');
     return this.cards.createCard(body.listId, body.title, body.description);
   }
 
@@ -16,7 +16,9 @@ export class CardsController {
     @Body()
     body: { source: { listId: string; orderedIds: string[] }; dest?: { listId: string; orderedIds: string[] } },
   ) {
-    if (!body?.source?.listId || !Array.isArray(body?.source?.orderedIds)) return { error: 'source.listId and source.orderedIds are required' };
+    if (!body?.source?.listId || !Array.isArray(body?.source?.orderedIds)) {
+      throw new BadRequestException('source.listId and source.orderedIds are required');
+    }
     return this.cards.reorder(body);
   }
 }
