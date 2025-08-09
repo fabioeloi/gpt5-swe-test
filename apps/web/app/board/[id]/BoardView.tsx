@@ -11,15 +11,10 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  rectSortingStrategy,
-  useSortable,
-  sortableKeyboardCoordinates,
-} from '@dnd-kit/sortable';
+import { SortableContext, arrayMove, rectSortingStrategy, useSortable, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useRouter } from 'next/navigation';
+import { reorderLists, reorderCards } from '../../../lib/dnd';
 
 type Card = { id: string; title: string; description?: string; position: number; listId: string };
 type List = { id: string; title: string; position: number; cards: Card[] };
@@ -170,16 +165,16 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
     // Dragging a list (column)
     const listIds = lists.map((l) => l.id);
     if (listIds.includes(aid) && listIds.includes(oid)) {
-      const oldIndex = listIds.indexOf(aid);
-      const newIndex = listIds.indexOf(oid);
-      const next = arrayMove(lists, oldIndex, newIndex);
-      setLists(next);
-      const orderedIds = next.map((l) => l.id);
-      fetch(`${base}/lists/reorder`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ boardId: initialBoard.id, orderedIds }),
-      }).then(() => router.refresh());
+      const result = reorderLists(lists.map(l => ({ ...l, cards: cardsByList[l.id] || [] })), aid, oid);
+      if (result) {
+  // Preserve list shape while updating order/positions
+  setLists(result.lists.map(l => ({ id: l.id, title: l.title, position: l.position, cards: cardsByList[l.id] || [] })) as any);
+        fetch(`${base}/lists/reorder`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ boardId: initialBoard.id, orderedIds: result.orderedIds }),
+        }).then(() => router.refresh());
+      }
       return;
     }
 
@@ -196,40 +191,18 @@ export default function BoardView({ initialBoard }: { initialBoard: Board }) {
     if (!destListId && lists.find((l) => l.id === oid)) destListId = oid;
     if (!destListId) return;
 
-    const sourceCards = [...(cardsByList[sourceListId] || [])];
-    const destCards = sourceListId === destListId ? sourceCards : [...(cardsByList[destListId] || [])];
-    const fromIndex = sourceCards.findIndex((c) => c.id === aid);
-    const toIndex = destCards.findIndex((c) => c.id === oid);
-
-    if (fromIndex < 0) return;
-
-    let nextSource = sourceCards;
-    let nextDest = destCards;
-
-    const [moved] = nextSource.splice(fromIndex, 1);
-    if (sourceListId === destListId) {
-      // Reorder within same list
-      nextDest = arrayMove(nextDest, fromIndex, Math.max(0, toIndex));
-      setCardsByList({ ...cardsByList, [sourceListId]: nextDest });
+    const cardResult = reorderCards(cardsByList, {
+      sourceListId,
+      destListId,
+      activeCardId: aid,
+      overId: oid,
+    });
+    if (cardResult) {
+      setCardsByList(cardResult.cardsByList);
       fetch(`${base}/cards/reorder`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          source: { listId: sourceListId, orderedIds: nextDest.map((c) => c.id) },
-        }),
-      }).then(() => router.refresh());
-    } else {
-      // Move across lists
-      const insertIndex = toIndex >= 0 ? toIndex : nextDest.length;
-      nextDest.splice(insertIndex, 0, { ...moved, listId: destListId });
-      setCardsByList({ ...cardsByList, [sourceListId]: nextSource, [destListId]: nextDest });
-      fetch(`${base}/cards/reorder`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          source: { listId: sourceListId, orderedIds: nextSource.map((c) => c.id) },
-          dest: { listId: destListId, orderedIds: nextDest.map((c) => c.id) },
-        }),
+        body: JSON.stringify({ source: cardResult.source, dest: cardResult.dest }),
       }).then(() => router.refresh());
     }
   }
